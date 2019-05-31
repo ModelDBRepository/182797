@@ -1,0 +1,64 @@
+load_file("read_param.hoc")
+
+// adjustable parameter
+strdef param_file
+param_file = "/Users/vsekulic/research/summer2011/d_lambda_val.dat"
+
+/////////////////////////
+// DO NOT MODIFY BELOW //
+/////////////////////////
+
+// first get our value for d_lambda
+//d_lambda = read_params(param_file, 1)
+d_lambda = read_param(param_file)
+
+// define path for file
+strdef TOPDIR, DATFILE, fullpath
+TOPDIR = "/Users/vsekulic/research/summer2011/2006-RichyandStarfish/vectorfiles/"
+DATFILE = "starfish_full_d_lambda_"
+sprint(fullpath, "%s/%s%g.dat", TOPDIR, DATFILE, d_lambda)
+
+//load_file("nrngui.hoc")
+load_file("initactivesdStarfishfull.hoc")
+//load_file("d_lambda_fit_Starfish_full.ses")
+
+soma area(.5)
+forsec all { nseg = int((L/(d_lambda*lambda_f(100))+.9)/2)*2 + 1  }
+totnseg = 0
+forsec all { totnseg = totnseg + nseg }
+
+// setup vectors for t and V data
+objref rect, recv_soma, recv_dend, recv_axon
+rect = new Vector()
+recv_soma = new Vector()
+recv_dend = new Vector()
+recv_axon = new Vector()
+
+rect.record(&t, 0.025)
+recv_soma.record(&soma[0].v(0.5), 0.025)
+recv_dend.record(&dendrite[43].v(0.5), 0.025)
+recv_axon.record(&axon[196].v(0.166667), 0.025)
+
+// run simulation
+tstop=200
+run()
+
+// open file for saving 
+objref savdata
+savdata = new File()
+savdata.wopen(fullpath)
+savdata.printf("%d\n", totnseg)
+//savdata.printf("t soma[0].v(0.5) dendrite[43].v(0.5) axon[196].v(0.166667)\n")
+
+// assemble matrix with data for efficiency & write it to file
+objref M
+M = new Matrix()
+M.resize(recv_soma.size(),4)
+M.setcol(0, rect)
+M.setcol(1, recv_soma)
+M.setcol(2, recv_dend)
+M.setcol(3, recv_axon)
+M.fprint(0, savdata, " %g")
+savdata.close()
+
+quit()

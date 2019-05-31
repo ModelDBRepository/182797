@@ -1,0 +1,82 @@
+
+load_file("ipsc.hoc")
+
+if (name_declared("d") != 5) {
+  printf("*** FATAL ERROR: no delay defined for IPSC->EPSCs! ABORTING...\n")
+  quit()
+}
+if (name_declared("cmd") != 5) {
+  printf("*** FATAL ERROR: no cmd specified! ABORTING...\n")
+  quit()
+}
+
+IEspike.start = 5000+d
+
+objref rec_t, rec_soma_v, rec_dend_v
+strdef OUT_DIR, TOP_DIR, timeout, somaout, dendout, curr_model, h_present, sesfile
+objref vectorfile
+
+TOP_DIR = "/Users/vsekulic/research/project/2006-RichyandStarfish-dendIh/04525047--90nA/revision-fits"
+
+for (j = 0; j <= 1; j=j+1) { 
+
+  if (cmd == 0) {
+    curr_model = "R326_hD0"
+    sprint(sesfile, "%s/R326_hD0.ses", TOP_DIR)
+  } else if (cmd == 1) {
+    curr_model = "R4_uniform"
+    sprint(sesfile, "%s/R4_uniform.ses", TOP_DIR)
+  } else if (cmd == 2) {
+    curr_model = "R4_linear"
+    sprint(sesfile, "%s/R4_linear.ses", TOP_DIR)
+  } else if (cmd == 3) {
+    curr_model = "R3_linear"
+    sprint(sesfile, "%s/R3_linear.ses", TOP_DIR)
+  }
+  printf("Loading sesfile '%s'...\n", sesfile)
+  load_file(sesfile)
+
+  h_present = ""
+  if (j == 1) {
+    h = 0
+    h_present = "_noIh"
+  }
+  
+  rec_t = new Vector()
+  rec_soma_v = new Vector()
+  rec_dend_v = new Vector()
+
+  rec_t.record(&t,0.1)
+  rec_soma_v.record(&soma[0].v(0.5),0.1)
+  rec_dend_v.record(&dendrite[40].v(1),0.1)
+
+  printf("Running...\n")
+  run()
+  printf("...done!\n")
+
+  sprint(OUT_DIR, "%s/%s", TOP_DIR, "outfiles")
+  //OUT_DIR = "/home/vsekulic/research/project/2006-RichyandStarfish-dendIh/04525047--90nA/revision-fits/outfiles"
+  sprint(timeout, "%s/%s%s_%d_time.dat", OUT_DIR, curr_model, h_present, d)
+  sprint(somaout, "%s/%s%s_%d_soma.dat", OUT_DIR, curr_model, h_present, d)
+  sprint(dendout, "%s/%s%s_%d_dend.dat", OUT_DIR, curr_model, h_present, d)
+  printf("%s\n", timeout)
+  printf("%s\n", somaout)
+  printf("%s\n", dendout)
+
+  vectorfile = new File()
+  vectorfile.wopen(timeout)
+  rec_t.vwrite(vectorfile)
+  vectorfile.close()
+
+  vectorfile = new File()
+  vectorfile.wopen(somaout)
+  rec_soma_v.vwrite(vectorfile)
+  vectorfile.close()
+
+  vectorfile = new File()
+  vectorfile.wopen(dendout)
+  rec_dend_v.vwrite(vectorfile)
+  vectorfile.close()
+}
+
+quit()

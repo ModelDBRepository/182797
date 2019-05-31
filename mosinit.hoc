@@ -1,0 +1,32 @@
+load_file("nrngui.hoc")
+AHP=5.5 
+CaL=25 
+CaT=1.25 
+KA=2.5 
+Kdrf=506 
+Kdrs=42 
+M=0.75 
+Nad=230 
+Nas=107 
+cell=1 
+h=0.1 
+hD=1 
+cinj=-90 
+t1=1 
+t2=1 
+t3=-0.116 
+t4=-17.9 
+t5=1 
+t6=0.09 
+t7=-1.84 
+t8=100 
+verbose=1 
+dendIh_growth=0 
+ihold=-0.0103516 
+fit=3
+load_file("init_exp.hoc")
+load_file("04525047--90nA/uniform-RmGr/dendIh_uni_RmCmTau_Starfish_hD1_3.ses")
+print "Simulation demo started with parameters as in script startup_R3.sh"
+print "and session file"
+print "04525047--90nA/uniform-RmGr/dendIh_uni_RmCmTau_Starfish_hD1_3.ses"
+

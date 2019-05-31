@@ -1,0 +1,179 @@
+// Richy
+Ri = 300        // ohm cm
+Cm = 0.96857    // uf/cm2
+//Rm = 59156      // ohm cm2
+Rmp = 5.9156      // ohm cm2
+E_L = -73.588   // mV
+g_KL = 9.9005e-10   // mho/cm2
+maxd = 308.919 // max distance on dendrites
+
+if (cell == 2) {
+
+    // Starfish
+    Ri = 300        // ohm cm
+    Cm = 0.9        // uf/cm2
+    //Rm = 39037.7    // ohm cm2
+    Rmp = 3.90377    // ohm cm2
+    E_L = -73.8424  // mV
+    g_KL = 1.00115e-09  // mho/cm2
+    maxd = 193.142  // max distance on dendrites
+}
+
+// Report on the dendritic Ih distribution we're assigning.
+if (VERBOSE) {
+    if (name_declared("dis")==5) {
+        if (dis == 0) {
+            printf("*** ASSIGNING LINEAR Ih DISTRIBUTION ***\n")
+        } else if (dis == 1) {
+            printf("*** ASSIGNING SIGMOIDAL Ih DISTRIBUTION ***\n")
+        } else if (dis == 2) {
+            printf("*** ASSIGNING EXPONENTIAL Ih DISTRIBUTION ***\n")
+        }
+    } else {
+        printf("*** ASSIGNING LINEAR Ih DISTRIBUTION ***\n")
+    }
+}
+
+// Provide gkhbar_scale as an argument, but don't require it. sf = scale factor. Needed so that the arg has a
+// different name than the actual variable used. A messy solution, however.
+gkhbar_scale = 1
+if (name_declared("gkhbar_sf") == 5) {
+    gkhbar_scale = gkhbar_sf
+}
+if (VERBOSE) {
+    printf("*** WE HAVE gkhbar_scale %g\n", gkhbar_scale)
+}   
+
+soma[0] distance()
+
+NOT_YET_DISPLAYED = 1
+
+proc init() {
+  // optimizer adjusts Ri, Cm, Rm, but NEURON uses Ra, cm, g_pas
+  //holdclamp.amp = -0.0011-(h*10^4/0.01)*(0.0018599+arbOff)
+  max_distance = 0
+
+  min_gkhbar = h
+  strdef min_gkhbar_secname
+  min_gkhbar_secname = secname()
+  max_gkhbar_x = 0
+
+  max_gkhbar = 0
+  strdef max_gkhbar_secname
+  max_gkhbar_secname = secname()
+  max_gkhbar_x = 0
+
+  Gh = h * gkhbar_scale
+
+  Rm = Rmp * 10^4
+  
+  forall {
+    Ra = Ri
+    cm = Cm
+
+    if (issection("axon.*")) {
+      g_passaxon= 1/Rm
+      erev_passaxon = E_L
+      gkl_Kleakaxon = g_KL
+    } else if (issection("soma.*")) {
+      gkhbar_Ih = Gh
+
+      t1_Ih = t1
+      t2_Ih = t2
+      t3_Ih = t3
+      t4_Ih = t4
+      t5_Ih = t5
+      t6_Ih = t6
+      t7_Ih = t7
+      t8_Ih = t8
+
+      g_passsd = 1/Rm
+      erev_passsd = E_L
+      gkl_Kleaksd = g_KL
+    } else {
+      // dendrites
+
+      g_passsd = 1/Rm
+      erev_passsd = E_L
+      gkl_Kleaksd = g_KL
+
+      // Measure this here, before we get into hD issues.
+      if (distance(x) > max_distance) {
+        max_distance = distance(x)
+      }
+    }
+
+    if (issection("dend.*") && hD == 1) {
+      if (DEBUG) { printf("section %s nseg %d\n", secname(), nseg) }
+      //gkhbar_Ih = h  // this is the default
+      for (x) {
+        if (DEBUG) {
+          printf("in x %g with nseg %g\n", x, nseg) 
+          printf("doing something in %g\n", x)
+        }
+
+        // By default just assign dendIh_growth in a linear distribution
+        // Only set sigmoidal or exponential if specified. (Or linear if dis==0).
+        // This way, if uniform distribution is required, only need to set dendIh_growth to zero without
+        // also needing to set ``dis''.
+        if (name_declared("dis")==5) {
+            if (dis == 0) {
+                // linear
+                gkhbar_Ih(x) = (distance(x) * dendIh_growth/maxd + 1) * Gh
+            } else if (dis == 1) {
+                // sigmoidal
+                gkhbar_Ih(x) = Gh * ( 1 +(dendIh_growth/(1 + exp((maxd/2 - distance(x))/20))) )
+            } else if (dis == 2) {
+                // exponential
+                gkhbar_Ih(x) = Gh * exp(dendIh_growth*distance(x)/maxd)
+            }
+        } else {
+            // linear
+            gkhbar_Ih(x) = (distance(x) * dendIh_growth/maxd + 1) * Gh
+        }
+
+        // CRUCIAL: DO NOT ALLOW NEGATIVE CONDUCTANCE! (from -ve dendIh_growth)
+        if (gkhbar_Ih(x) < 0) { gkhbar_Ih(x) = 0 } 
+        if (VERBOSE && NOT_YET_DISPLAYED) { printf("*** GIVING gkhbar_Ih %g to %s.v(%g) at distance %g \n", gkhbar_Ih(x), secname(), x, distance(x)) }
+        if (distance(x) > max_distance) {
+            max_distance = distance(x)
+        }
+        if (gkhbar_Ih(x) < min_gkhbar) {
+            min_gkhbar = gkhbar_Ih(x)
+            min_gkhbar_secname = secname()
+            min_gkhbar_x = x
+        }
+        if (gkhbar_Ih(x) > max_gkhbar) {
+            max_gkhbar = gkhbar_Ih(x)
+            max_gkhbar_secname = secname()
+            min_gkhbar_x = x
+        }
+      }
+      t1_Ih = t1
+      t2_Ih = t2
+      t3_Ih = t3
+      t4_Ih = t4
+      t5_Ih = t5
+      t6_Ih = t6
+      t7_Ih = t7
+      t8_Ih = t8
+    }
+  }
+  finitialize(v_init)
+  if (cvode.active()) {
+    cvode.re_init()
+  } else {
+    fcurrent()
+  }
+  frecord_init()
+  if (DEBUG && NOT_YET_DISPLAYED) {
+    printf("*** MAX DISTANCE IS %g\n", max_distance)
+    printf("*** MIN gkhbar = %g at %s.v(%g)\n", min_gkhbar, min_gkhbar_secname, min_gkhbar_x)
+    printf("*** MAX gkhbar = %g at %s.v(%g)\n", max_gkhbar, max_gkhbar_secname, max_gkhbar_x)
+    printf("*** TOTAL gkhbar = %g\n", gkhbar_tot)
+  }
+  if (VERBOSE) {
+    NOT_YET_DISPLAYED = 0
+  } 
+}
+printf("*** [passive_props] SET CELL %d PROPS to Ri %g Cm %g Rm %g E_L %g g_KL %g\n", cell, Ri, Cm, Rm, E_L, g_KL)

@@ -1,0 +1,13 @@
+// usage: 
+//  oc> h = 3e-05 // or whatever new val you want
+//  oc> set_gh()
+
+proc set_gh() {
+    forall {
+        if (issection("soma.*")) {
+            gkhbar_Ih = h
+        } else if (hD == 1 && issection("dend.*")) {
+            for (x, 0) gkhbar_Ih(x) = h * exp(dendIh_growth*distance(x)/400)
+        }
+    }
+}

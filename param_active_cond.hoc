@@ -1,0 +1,161 @@
+/*
+ * MANDATORY command-line args:
+ *
+ * NB: All conductance density arguments must be supplied in pS/um^2 units;
+ *     they will be subsequently converted to mho/cm^2 as expected in the O-LM
+ *     code. This is for readability purposes and shortening the filenames for
+ *     the model outputs.
+ * 
+ * Nad, Nas, Kdrf, Kdrs, KA, h, CaL, CaT, AHP, M
+ * 	Maximal conductance densities for these channels (suffix "d" indicates
+ *      dendrite, "s" soma). Axonal compartments get same value as dendrites.
+ *	cf. Table A2, Lawrence et al. 2006; NB that axonal conductance density
+ *	for gNa is the same as in dendrites; also recall that the axonal initial
+ *	segment is attached to dendrites in O-LM cells (Martina et al. 2000).
+ *
+ * cinj
+ *	Injected current into soma. Must be in pA units, which will subsequently
+ * 	be converted to nA as used in NEURON.
+ * 
+ * hD
+ *	Specifies whether the value provided by the h argument should be applied
+ * 	to the dendrites or not. If 0, h will only be assigned to somatic 
+ *	compartments; if 1, it will be assigned uniformly throughout the entire
+ *	somato-dendritic domain.
+ * 
+ * OPTIONAL command-line args:
+ *
+ * verbose
+ *	Enables extra logging to stdout, particularly displaying what gbar
+ * 	values are being set for each conductance in each section.
+ *
+ * Ref for command-line arg processing in NEURON:
+ * 	https://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&t=1747
+ *
+ * Remember that gkhbar has been commented out as it is being set directly in the mod file.
+*/
+
+func set_gbars() {
+
+  quitflag = 0
+  if (name_declared("Nad")!=5) { printf("ERROR: no Nad!\n") quitflag=1 }
+  if (name_declared("Nas")!=5) { printf("ERROR: no Nas!\n") quitflag=1 }
+  if (name_declared("Kdrf")!=5) { printf("ERROR: no Kdrf!\n") quitflag=1 }
+  if (name_declared("Kdrs")!=5) { printf("ERROR: no Kdrs!\n") quitflag=1 }
+  if (name_declared("KA")!=5) { printf("ERROR: no KA!\n") quitflag=1 }
+  if (name_declared("h")!=5) { printf("ERROR: no h!\n") quitflag=1 }
+  if (name_declared("hD")!=5) { printf("ERROR: no hD!\n") quitflag=1 }
+  if (name_declared("CaL")!=5) { printf("ERROR: no CaL!\n") quitflag=1 }
+  if (name_declared("CaT")!=5) { printf("ERROR: no CaT!\n") quitflag=1 }
+  if (name_declared("AHP")!=5) { printf("ERROR: no AHP!\n") quitflag=1 }
+  if (name_declared("M")!=5) { printf("ERROR: no M!\n") quitflag=1 }
+
+  if (quitflag) {
+    return quitflag
+  }
+
+  // Convert from pS/um^2 given on command-line to mho/cm^2 expected by the model code.
+  Nad = Nad * 10^-4
+  Nas = Nas * 10^-4
+  Kdrf = Kdrf * 10^-4
+  Kdrs = Kdrs * 10^-4
+  KA = KA * 10^-4
+  h = h * 10^-4
+  CaL = CaL * 10^-4
+  CaT = CaT * 10^-4
+  AHP = AHP * 10^-4
+  M = M * 10^-4
+
+  if (VERBOSE) { printf("*** I have Nad |%g| Nas |%g| Kdrf |%g| Kdrs |%g| KA |%g| h |%g| hD |%g| CaL |%g| CaT |%g| AHP |%g| M |%g| ***\n", Nad, Nas, Kdrf, Kdrs, KA, h, hD, CaL, CaT, AHP, M) }
+
+  soma[0] distance() //sets soma[0](0) as origin
+
+  forsec all {
+  
+    // Somatic compartments
+    if (issection("soma.*")) {
+      gbar_Ikdrf = Kdrf
+      gbar_Ikdrs = Kdrs
+      gbar_Ika = KA
+      gna_Nasoma = Nas
+      gkhbar_Ih = h
+      gbar_IM = M
+
+      if (VERBOSE) {
+        printf("** %s :\n", secname())
+        printf("\tgna_Nasoma = %g\n", gna_Nasoma)
+        printf("\tgbar_Ikdrf = %g\n", gbar_Ikdrf)
+        printf("\tgbar_Ikdrs = %g\n", gbar_Ikdrs)
+	printf("\tgbar_Ika = %g\n", gbar_Ika)
+	printf("\tgkhbar_Ih = %g\n", gkhbar_Ih)
+        printf("\tgbar_IM = %g\n", gbar_IM)
+      }
+    }
+
+    // Dendritic compartments
+    if (issection("dend.*")) {
+      gbar_Ikdrf = Kdrf
+      gbar_Ikdrs = Kdrs
+      gbar_Ika = KA
+      gna_Nadend = Nad
+      gcalbar_cal = CaL
+      gbar_cat = CaT
+      gkbar_kca = AHP 
+      gbar_IM = M
+
+      if (hD == 1) {
+	gkhbar_Ih = h
+	//for (x, 0) gkhbar_Ih = 0.000005
+      }
+      if (VERBOSE) {
+        printf("** %s :\n", secname())
+        printf("\tgna_Nadend = %g\n", gna_Nadend)
+        printf("\tgbar_Ikdrf = %g\n", gbar_Ikdrf)
+        printf("\tgbar_Ikdrs = %g\n", gbar_Ikdrs)
+        printf("\tgbar_Ika = %g\n", gbar_Ika)
+        if (hD == 1) {
+          //printf("\tgkhbar_Ih = %g\n", gkhbar_Ih)
+        }
+        printf("\tgcalbar_cal = %g\n", gcalbar_cal)
+        printf("\tgbar_cat = %g\n", gbar_cat)
+        printf("\tgkbar_kca = %g\n", gkbar_kca)
+        printf("\tgbar_IM = %g\n", gbar_IM)
+      }
+    }
+
+    // Axonal compartments
+    if (issection("axon.*")) {
+      gbar_Ikdrfaxon = Kdrf
+      gbar_Ikdrsaxon = Kdrs
+      if (cell == 1) {
+        gna_Naaxon = Nad	// for some reason Richy uses Naaxon...
+      } else {
+        gna_Nadend = Nad	// ...but Starfish uses Nadend. Historical reasons from Lawrence et al (2006)?
+      }
+
+      if (VERBOSE) {
+        printf("** %s :\n", secname())
+        if (cell == 1) {
+          printf("\tgna_Naaxon = %g\n", gna_Naaxon)
+        } else {
+          printf("\tgna_Nadend = %g\n", gna_Nadend)
+        }
+        printf("\tgbar_Ikdrfaxon = %g\n", gbar_Ikdrfaxon)
+        printf("\tgbar_Ikdrsaxon = %g\n", gbar_Ikdrsaxon)
+      }
+    }
+
+  }
+  return 0 // success
+}
+
+/*
+ * NB: the "iprotocol.hoc" file must have been included first to call this.
+ */
+func set_cinj() {
+  if (name_declared("cinj")!=5) { printf("ERROR: no cinj!\n") return 1 }
+  injclamp.amp = cinj/1000
+  if (VERBOSE) { printf("*** injclamp.amp set to %g nA from arg of %g pA\n", injclamp.amp, cinj) }
+  return 0
+}
+

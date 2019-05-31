@@ -1,0 +1,160 @@
+
+// Load R4 straight from DB. That's all.
+
+tstop = 3500
+injclamp.amp = 0
+h=3e-05
+holdclamp.amp=0
+
+objref IMSspike
+soma[0] IMSspike = new NetStim(0.5)
+
+// 5Hz
+//IMSspike.interval = 200
+//IMSspike.number 25
+
+// 8Hz
+//IMSspike.interval = 125
+//IMSspike.number = 40
+
+// 10Hz
+IMSspike.interval = 100
+IMSspike.number 50
+
+IMSspike.start = 500
+IMSspike.noise = 0
+
+objref Isyn1, Isyn2, Isyn3, Isyn4, Isyn5, Isyn6, Isyn7
+objref Isyn8, Isyn9, Isyn10, Isyn11, Isyn12, Isyn13
+objref Isyn14, Isyn15, Isyn16, Isyn17, Isyn18
+
+dendrite[33] Isyn1 = new ExpSyn(0.282609) 
+Isyn1.tau = 8.5
+Isyn1.e = -85
+Isyn1.i = -0.6
+
+dendrite[38] Isyn2 = new ExpSyn(0.754902) 
+Isyn2.tau = 8.5
+Isyn2.e = -85
+Isyn2.i = -0.6
+
+dendrite[1] Isyn3 = new ExpSyn(0.944444) 
+Isyn3.tau = 8.5
+Isyn3.e = -85
+Isyn3.i = -0.6
+
+dendrite[33] Isyn4 = new ExpSyn(0.282609) 
+Isyn4.tau = 8.5
+Isyn4.e = -85
+Isyn4.i = -0.6
+
+dendrite[19] Isyn5 = new ExpSyn(0.863636) 
+Isyn5.tau = 8.5
+Isyn5.e = -85
+Isyn5.i = -0.6
+
+dendrite[3] Isyn6 = new ExpSyn(0.72449) 
+Isyn6.tau = 8.5
+Isyn6.e = -85
+Isyn6.i = -0.6
+
+dendrite[25] Isyn7 = new ExpSyn(0.351852) 
+Isyn7.tau = 8.5
+Isyn7.e = -85
+Isyn7.i = -0.6
+
+dendrite[29] Isyn8 = new ExpSyn(0.572727) 
+Isyn8.tau = 8.5
+Isyn8.e = -85
+Isyn8.i = -0.6
+
+dendrite[1] Isyn9 = new ExpSyn(0.759259) 
+Isyn9.tau = 8.5
+Isyn9.e = -85
+Isyn9.i = -0.6
+
+dendrite[3] Isyn10 = new ExpSyn(0.94898) 
+Isyn10.tau = 8.5
+Isyn10.e = -85
+Isyn10.i = -0.6
+
+dendrite[25] Isyn11 = new ExpSyn(0.166667)
+Isyn11.tau = 8.5
+Isyn11.e = -85
+Isyn11.i = -0.6
+
+dendrite[1] Isyn12 = new ExpSyn(0.685185)
+Isyn12.tau = 8.5
+Isyn12.e = -85
+Isyn12.i = -0.6
+
+dendrite[45] Isyn13 = new ExpSyn(0.364865)
+Isyn13.tau = 8.5
+Isyn13.e = -85
+Isyn13.i = -0.6
+
+dendrite[21] Isyn14 = new ExpSyn(0.189655)
+Isyn14.tau = 8.5
+Isyn14.e = -85
+Isyn14.i = -0.6
+
+dendrite[29] Isyn15 = new ExpSyn(0.318182)
+Isyn15.tau = 8.5
+Isyn15.e = -85
+Isyn15.i = -0.6
+
+dendrite[35] Isyn16 = new ExpSyn(0.0853658)
+Isyn16.tau = 8.5
+Isyn16.e = -85
+Isyn16.i = -0.6
+
+dendrite[21] Isyn17 = new ExpSyn(0.327586)
+Isyn17.tau = 8.5
+Isyn17.e = -85
+Isyn17.i = -0.6
+
+dendrite[19] Isyn18 = new ExpSyn(0.590909)
+Isyn18.tau = 8.5
+Isyn18.e = -85
+Isyn18.i = -0.6
+
+objref Iconn1, Iconn2, Iconn3, Iconn4, Iconn5, Iconn6, Iconn7
+objref Iconn8, Iconn9, Iconn10, Iconn11, Iconn12, Iconn13, Iconn14
+objref Iconn15, Iconn16, Iconn17, Iconn18
+
+Iconn1 = new NetCon(IMSspike, Isyn1)
+Iconn1.weight = 1
+Iconn2 = new NetCon(IMSspike, Isyn2)
+Iconn2.weight = 1
+Iconn3 = new NetCon(IMSspike, Isyn3)
+Iconn3.weight = 1
+Iconn4 = new NetCon(IMSspike, Isyn4)
+Iconn4.weight = 1
+Iconn5 = new NetCon(IMSspike, Isyn5)
+Iconn5.weight = 1
+Iconn6 = new NetCon(IMSspike, Isyn6)
+Iconn6.weight = 1
+Iconn7 = new NetCon(IMSspike, Isyn7)
+Iconn7.weight = 1
+Iconn8 = new NetCon(IMSspike, Isyn8)
+Iconn8.weight = 1
+Iconn9 = new NetCon(IMSspike, Isyn9)
+Iconn9.weight = 1
+Iconn10 = new NetCon(IMSspike, Isyn10)
+Iconn10.weight = 1
+Iconn11 = new NetCon(IMSspike, Isyn11)
+Iconn11.weight = 1
+Iconn12 = new NetCon(IMSspike, Isyn12)
+Iconn12.weight = 1
+Iconn13 = new NetCon(IMSspike, Isyn13)
+Iconn13.weight = 1
+Iconn14 = new NetCon(IMSspike, Isyn14)
+Iconn14.weight = 1
+Iconn15 = new NetCon(IMSspike, Isyn15)
+Iconn15.weight = 1
+Iconn16 = new NetCon(IMSspike, Isyn16)
+Iconn16.weight = 1
+Iconn17 = new NetCon(IMSspike, Isyn17)
+Iconn17.weight = 1
+Iconn18 = new NetCon(IMSspike, Isyn18)
+Iconn18.weight = 1

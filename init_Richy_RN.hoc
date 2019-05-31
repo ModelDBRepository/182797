@@ -1,0 +1,15 @@
+load_file("nrngui.hoc")
+load_file("initactivesdRichy.hoc")
+load_file("rn.hoc")
+load_file("seclamp.hoc")
+load_file("params.hoc")
+load_file("active_switches.hoc")
+load_file("nsegfuncs.hoc")
+
+load_file("seclamp_fit_Richy_FIT5.ses")
+load_file("Richy-FIT-RN.ses")
+
+cvode_active(1)
+cvode.atol(0.005)
+
+seclamp_off()

@@ -1,0 +1,15 @@
+ParmFitness: Unnamed multiple run protocol
+	FitnessGenerator: dendIh
+		RegionFitness:	soma[0].v(0.5)
+
+	Parameters:
+		"t1", 0.299236, 1e-06, 1e+06, 1, 0
+		"t2", 1.54319, 1e-06, 1e+06, 1, 0
+		"t3", -0.0959627, -1e+06, -1e-09, 1, 0
+		"t4", -17.2687, -1e+06, 1e+06, 1, 0
+		"t5", 0.101363, 1e-06, 1e+06, 1, 0
+		"t6", 2.11603, 1e-09, 1e+06, 1, 0
+		"t7", -3.38464, -1e+06, 1e+06, 1, 0
+		"t8", 102.514, -1e+06, 1e+06, 1, 0
+		"Rmp", 4.39319, 1e-06, 1e+06, 1, 0
+End ParmFitness

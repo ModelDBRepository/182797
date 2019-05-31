@@ -1,0 +1,50 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(1,52,1)}
+
+//Begin MulRunFitter[0]
+{
+load_file("mulfit.hoc", "MulRunFitter")
+}
+{
+ocbox_ = new MulRunFitter(1)
+}
+{object_push(ocbox_)}
+{
+version(6)
+ranfac = 2
+fspec = new File("dendIh_uni_RmCm_Starfish_hD1_5.ses.ft1")
+fdat = new File("dendIh_uni_RmCm_Starfish_hD1_5.ses.fd1")
+read_data()
+build()
+}
+opt.set_optimizer("MulfitPraxWrap")
+{object_push(opt.optimizer)}
+{
+nstep = 0
+}
+{object_pop()}
+{p.gengui(0, 37, 798, 411.84, 371.52)}
+{p.showargs(569, 695, 233.28, 94.08)}
+{p.showdomain(797, 144, 295.68, 192)}
+{optrestore(404, 150, 309.12, 338.88)}
+{object_pop()}
+{
+ocbox_.map("MulRunFitter[0]", 34, 498, 353.28, 249.6)
+}
+objref ocbox_
+//End MulRunFitter[0]
+
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1300,-105,-73)
+scene_vector_[3] = save_window_
+{save_window_.view(0, -105, 1300, 32, 39, 210, 300.48, 200.32)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

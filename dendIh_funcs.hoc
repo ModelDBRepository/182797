@@ -1,0 +1,34 @@
+proc print_tau() {
+    printf("%g %g %g %g %g %g %g %g | %g %g %g %g %g %g\n", t1, t2, t3, t4, t5, t6, t7, t8, dendIh_growth, holdclamp.amp, Rm, Cm, gkhbar_tot(), gkhbar_scale)
+}
+
+func gkhbar_tot() {
+    gkhbar_t = 0
+    forall for(x) {
+        if (!issection("axon.*") && (issection("soma.*") || (issection("dendrite.*") && hD == 1))) {
+
+            // Calculates total conductance, in pS
+            // 10^4 factor required to convert from S/cm^2 to pS/um^2.
+            // gkhbar_t then has units of pS.
+            gkhbar_t = gkhbar_t + (gkhbar_Ih(x) * 10^4 * area(x))
+        }
+    }
+
+    // Return in nS so we get, e.g., 1.443 instead of 1443 for Richy (uniform dendritic Ih with gkhbar=0.1pS/um^2).
+    return gkhbar_t * 10^-3
+}
+
+/*
+ * Completely unnecessary! Just set h = 0 and init() in params.hoc will take care of the rest!
+ */
+proc gkhbar_Ih_off() {
+    forall {
+        if (issection("soma.*")) {
+            gkhbar_Ih = 0
+        } else if (issection("dend.*") && hD == 1) {
+            for (x) {
+                gkhbar_Ih(x) = 0
+            }
+        }
+    }
+}

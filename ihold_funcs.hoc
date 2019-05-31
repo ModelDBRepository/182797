@@ -1,0 +1,109 @@
+objref recv_hold
+
+proc refit_ihold() {
+    // save original values to tstop and injclamp in case these are <1s
+    injclamp_del = injclamp.del
+    injclamp.del = 1000
+    tstop_orig = tstop
+
+    // Fit holding current
+    tstop=injclamp.del // only run for initial period
+    recv_hold = new Vector()
+    recv_hold.record(&soma[0].v(0.5)) // first need to find spike, so use variable dt from cvode
+    target_Vm = -60 - 13.8 // == -73.8mV; NB: -13.8mV for JP correction
+    //leeway = 2 // leeway in fitting holding current; start off at 2mV
+    leeway = 5 // leeway in fitting holding current; start off at 5mV
+    //target_error = 0.05 // mV
+    //target_error = 0.1 // mV - changed it as 0.05 wouldn't always converge
+    target_error = 0.15 // mV - changed it as 0.1 wouldn't always converge
+
+    // start from -15pA, we will then either go more positive (likely), or more negative, as needed
+    start_amp = -0.015
+    holdclamp.amp = start_amp // holdclamp defined in iprotocol.hoc
+    stopspike_amp = start_amp // amount of amp to stop spike with
+    amp_increment = 0.001 // amount to increment amp, at first
+    found_spike = 0
+    found_hold = 0
+    while (!found_hold) {
+      printf("*** FITTING holding clamp amp: trying %g nA\n", holdclamp.amp)
+      run()
+
+      /*
+        Two phases: 1) Find amp to stop spiking at, using variable dt; 2) Find amp
+        to get avg_Vm to target_Vm, using fixed dt. We need both phases because of
+        Vector.record() functioning. If we just have one phase, and set variable dt,
+        then we won't get accurate avg_Vm in the last fifth of initial period as there
+        will be too few data points, so won't converge properly. If we have fixed dt,
+        then likely won't catch the spike in the case where the spike threshold is
+        lower than target_Vm. In this case, the fitting procedure will run indefinitely
+        because the spiking will throw off avg_Vm.  
+          So our solution are these two phases. The first is to definitively find
+        the spike threshold (rather, amount of holding current needed to stop spiking).
+        Then we start the second phase with fixed dt in recv_hold.record() vector. This
+        is where we look for the holding current to keep avg_Vm close to target_Vm.
+        *But* if in the course of this second phase we notice that our holding clamp
+        amp is getting to be smaller (i.e., higher nA value) than the current needed to
+        stop the spike, then we know that this is one of the model cells where spiking
+        occurs even before we've reached target_Vm from below.  In this case we stop
+        with the holding clamp amp set to stopspike_amp.
+      */
+      if (!found_spike) {
+        if (recv_hold.max() >= -10) {
+          stopspike_amp = holdclamp.amp - amp_increment
+          printf("*** GENERATED SPIKE!!! FOUND holding clamp amp to stop spike at %g nA\n", stopspike_amp)
+          found_spike = 1
+        } else if (holdclamp.amp >= 0.015) {
+          printf("*** CELL NOT INTRINSICALLY SPIKING; reached upper bound on check. Continuing with holding clamp fitting...\n")
+          stopspike_amp = holdclamp.amp
+          found_spike = 1
+        } else {
+          holdclamp.amp = holdclamp.amp + amp_increment
+        }
+     
+        if (found_spike) {
+          // now re-init vector and use fixed dt in order to get good avg_Vm calculation
+          recv_hold = new Vector()
+          recv_hold.record(&soma[0].v(0.5),20) // this will give us 50 timepoints in recv_hold
+          holdclamp.amp = start_amp // reset holdclamp.amp too
+        }
+      } else {
+
+        if (holdclamp.amp > stopspike_amp) {
+          holdclamp.amp = holdclamp.amp - amp_increment // just to output what we actually tested for
+          printf("*** FATAL ERROR: holding current fitting algorithm found inappropriate model. ABORTING...\n")
+          return
+        } else {
+
+          // Get average of somatic Vm in last 200ms of initial period, so last 5th of 1s-long trace
+          end = recv_hold.size() - 1
+          start = (end) * 4/5 + 1
+          avg_Vm = recv_hold.sum(start, end) / (end - start + 1)
+          printf("*** AVG Vm %g mV\n", avg_Vm)
+
+          if (avg_Vm >= target_Vm - leeway && avg_Vm <= target_Vm + leeway) {
+            if (abs(abs(avg_Vm) - abs(target_Vm)) <= target_error) {
+              // we found our holding current amp!
+              printf("*** FOUND holding clamp amp at %g nA\n", holdclamp.amp)
+              found_hold = 1
+            } else {
+    //          leeway = leeway / 2
+              leeway = leeway * 2/3
+              amp_increment = amp_increment / 2
+              printf("*** GOING TO FINER resolution of amp_increment: %g and leeway: %g\n", amp_increment, leeway)
+            }
+          } else if (avg_Vm < target_Vm - leeway) {
+            // still hyperpolarized wrt target Vm, so inject *less* hyperpolarizing current
+            holdclamp.amp = holdclamp.amp + amp_increment
+          } else if (avg_Vm > target_Vm - leeway) {
+            // we are depolarized wrt target Vm, so inject *more* hyperpolarizing current
+            holdclamp.amp = holdclamp.amp - amp_increment
+          } else {
+            // umm, something broke
+            printf("*** FATAL ERROR: impossible control flow in holding current code; avg_Vm %g holdclamp.amp %g", avg_Vm, holdclamp.amp)
+          }
+        }
+      }
+    }
+    tstop = tstop_orig
+    injclamp.del = injclamp_del
+}

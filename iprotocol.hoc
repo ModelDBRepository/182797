@@ -1,0 +1,11 @@
+objref holdclamp 
+holdclamp = new IClamp(0.5)
+holdclamp.del = 0
+holdclamp.dur = 1300
+holdclamp.amp = -0.012 // nA
+
+objref injclamp
+injclamp = new IClamp(0.5)
+injclamp.del = 181
+injclamp.dur = 1000
+injclamp.amp = cinj/1000 // convert pA to nA

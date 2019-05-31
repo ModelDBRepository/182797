@@ -1,0 +1,12 @@
+func setnseg() {
+  d_lambda = $1
+  soma area(.5)
+  forsec all { nseg = int((L/(d_lambda*lambda_f(100))+.9)/2)*2 + 1  }
+  return getnseg()
+}
+
+func getnseg() {
+  totnseg = 0
+  forsec all { totnseg = totnseg + nseg }
+  return totnseg
+}
